@@ -27,6 +27,7 @@
 
 #include <ql/cashflows/iborcoupon.hpp>
 #include <ql/cashflows/cmscoupon.hpp>
+#include <ql/cashflows/cmtcoupon.hpp>
 #include <ql/utilities/null.hpp>
 
 namespace QuantLib {
@@ -157,6 +158,49 @@ namespace QuantLib {
 
         void accept(AcyclicVisitor& v) override {
             auto* v1 = dynamic_cast<Visitor<CappedFlooredCmsCoupon>*>(&v);
+            if (v1 != nullptr)
+                v1->visit(*this);
+            else
+                CappedFlooredCoupon::accept(v);
+        }
+    };
+
+    class CappedFlooredCmtCoupon : public CappedFlooredCoupon {
+      public:
+        CappedFlooredCmtCoupon(const Date& paymentDate,
+                               Real nominal,
+                               const Date& startDate,
+                               const Date& endDate,
+                               Natural fixingDays,
+                               const ext::shared_ptr<BondIndex>& index,
+                               Real gearing = 1.0,
+                               Spread spread = 0.0,
+                               const Rate cap = Null<Rate>(),
+                               const Rate floor = Null<Rate>(),
+                               const Date& refPeriodStart = Date(),
+                               const Date& refPeriodEnd = Date(),
+                               const DayCounter& dayCounter = DayCounter(),
+                               bool isInArrears = false,
+                               const Date& exCouponDate = Date())
+        : CappedFlooredCoupon(ext::shared_ptr<FloatingRateCoupon>(
+            new CmtCoupon(paymentDate,
+                            nominal,
+                            startDate,
+                            endDate,
+                            fixingDays,
+                            index,
+                            gearing,
+                            spread,
+                            refPeriodStart,
+                            refPeriodEnd,
+                            dayCounter,
+                            isInArrears,
+                            exCouponDate)),
+                            cap,
+                            floor) {}
+
+        void accept(AcyclicVisitor& v) override {
+            auto* v1 = dynamic_cast<Visitor<CappedFlooredCmtCoupon>*>(&v);
             if (v1 != nullptr)
                 v1->visit(*this);
             else
