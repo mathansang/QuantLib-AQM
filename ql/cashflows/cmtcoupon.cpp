@@ -45,6 +45,30 @@ namespace QuantLib {
                          dayCounter, isInArrears, exCouponDate),
       bondIndex_(bondIndex) {
         this->fixingDate_ = this->fixingDate();
+
+        auto iborIndex = ext::make_shared<IborIndex>(
+            "dummyIborIndex",
+            bondIndex->fixedLegTenor(),
+            bondIndex->fixingDays(),
+            bondIndex->currency(),
+            bondIndex->fixingCalendar(),
+            bondIndex->fixedLegConvention(),
+            false,
+            bondIndex->fixedLegDayCounter(),
+            bondIndex->discountingTermStructure());
+                  
+
+        this->swapIndex_ = ext::make_shared<SwapIndex>(
+            "dummySwapIndex",
+            bondIndex->tenor(),
+            bondIndex->fixingDays(),
+            bondIndex->currency(),
+            bondIndex->fixingCalendar(),
+            bondIndex->fixedLegTenor(),
+            bondIndex->fixedLegConvention(),
+            bondIndex->fixedLegDayCounter(),
+            iborIndex,
+            bondIndex->discountingTermStructure());
     }
 
     CmtCoupon::CmtCoupon(const Date& paymentDate,
@@ -67,6 +91,30 @@ namespace QuantLib {
                          dayCounter, isInArrears, exCouponDate),
       bondIndex_(bondIndex) {
         this->fixingDate_ = fixingDate;
+
+        auto iborIndex = ext::make_shared<IborIndex>(
+            "dummyIborIndex",
+            bondIndex->fixedLegTenor(),
+            bondIndex->fixingDays(),
+            bondIndex->currency(),
+            bondIndex->fixingCalendar(),
+            bondIndex->fixedLegConvention(),
+            false,
+            bondIndex->fixedLegDayCounter(),
+            bondIndex->discountingTermStructure());
+                  
+
+        this->swapIndex_ = ext::make_shared<SwapIndex>(
+            "dummySwapIndex",
+            bondIndex->tenor(),
+            bondIndex->fixingDays(),
+            bondIndex->currency(),
+            bondIndex->fixingCalendar(),
+            bondIndex->fixedLegTenor(),
+            bondIndex->fixedLegConvention(),
+            bondIndex->fixedLegDayCounter(),
+            iborIndex,
+            bondIndex->discountingTermStructure());
     }
 
     void CmtCoupon::accept(AcyclicVisitor& v) {

@@ -24,8 +24,7 @@
 #ifndef quantlib_cmt_coupon_hpp
 #define quantlib_cmt_coupon_hpp
 
-#include <ql/cashflows/floatingratecoupon.hpp>
-#include <ql/time/schedule.hpp>
+#include <ql/cashflows/cmscoupon.hpp>
 
 namespace QuantLib {
 
@@ -36,7 +35,7 @@ namespace QuantLib {
                  i.e., the start and end date passed upon construction
                  should be already rolled to a business day.
     */
-    class CmtCoupon : public FloatingRateCoupon {
+    class CmtCoupon : public CmsCoupon {
       public:
         CmtCoupon(const Date& paymentDate,
                   Real nominal,
@@ -68,10 +67,7 @@ namespace QuantLib {
 
         //! \name Inspectors
         //@{
-        const ext::shared_ptr<BondIndex>& bondIndex() const {
-            return bondIndex_;
-        }
-        
+        const ext::shared_ptr<BondIndex>& bondIndex() const { return bondIndex_; }
         Date fixingDate() const override { return this->fixingDate_; }
 
         //@}

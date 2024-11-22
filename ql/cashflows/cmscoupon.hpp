@@ -61,7 +61,7 @@ namespace QuantLib {
         //@{
         void accept(AcyclicVisitor&) override;
         //@}
-      private:
+      protected:
         ext::shared_ptr<SwapIndex> swapIndex_;
     };
 
