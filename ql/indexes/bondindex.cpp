@@ -43,6 +43,29 @@ namespace QuantLib {
         // iborIndex_(std::move(iborIndex)), 
         // registerWith(iborIndex_);
         registerWith(discount_);
+
+        auto iborIndex = ext::make_shared<IborIndex>(
+			"dummyIborIndex",
+			fixedLegTenor,
+			settlementDays,
+			currency,
+			fixingCalendar,
+			fixedLegConvention,
+			false, 
+            fixedLegDayCounter,
+			discount_);
+
+		this->dummySwapIndex_ = ext::make_shared<SwapIndex>(
+			"dummySwapIndex",
+			tenor,
+			settlementDays,
+			currency,
+			fixingCalendar,
+			fixedLegTenor,
+			fixedLegConvention, 
+            fixedLegDayCounter,
+			iborIndex,
+			discount_);
     }
 
     Handle<YieldTermStructure> BondIndex::discountingTermStructure() const {
@@ -76,6 +99,10 @@ namespace QuantLib {
 
     }
 
+    //Rate BondIndex::forecastFixing2(const Date& fixingDate) const {
+    //    this->dummySwapIndex_->forecastFixing(fixingDate);
+    //}
+
     Date BondIndex::maturityDate(const Date& valueDate) const {
         return this->fixingCalendar().advance(valueDate, tenor_, this->fixedLegConvention_);
     }
@@ -107,4 +134,5 @@ namespace QuantLib {
                         this->discount_);
 
     }
+
 }

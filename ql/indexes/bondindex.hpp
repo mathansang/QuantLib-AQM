@@ -23,9 +23,7 @@
 #ifndef quantlib_bondindex_hpp
 #define quantlib_bondindex_hpp
 
-#include <ql/indexes/interestrateindex.hpp>
-#include <ql/termstructures/yieldtermstructure.hpp>
-#include <ql/cashflows/rateaveraging.hpp>
+#include <ql/indexes/swapindex.hpp>
 #include <ql/instruments/bond.hpp>
 
 namespace QuantLib {
@@ -69,6 +67,10 @@ namespace QuantLib {
         virtual ext::shared_ptr<BondIndex> clone(
                         const Period& tenor) const;
         // @}
+
+        ext::shared_ptr<SwapIndex> dummySwapIndex() const { return this->dummySwapIndex_; }
+
+        
       protected:
         Rate forecastFixing(const Date& fixingDate) const override;
         Period tenor_;
@@ -80,6 +82,7 @@ namespace QuantLib {
         // is used multiple time to forecast changing fixing
         mutable ext::shared_ptr<Bond> lastBond_;
         mutable Date lastFixingDate_;
+        ext::shared_ptr<SwapIndex> dummySwapIndex_;
     };
 
     // inline definitions

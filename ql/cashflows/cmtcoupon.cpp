@@ -39,36 +39,12 @@ namespace QuantLib {
                          const DayCounter& dayCounter,
                          bool isInArrears,
                          const Date& exCouponDate)
-    : FloatingRateCoupon(paymentDate, nominal, startDate, endDate,
-                         fixingDays, bondIndex, gearing, spread,
+    : CmsCoupon(paymentDate, nominal, startDate, endDate,
+                         fixingDays, bondIndex-> dummySwapIndex(), gearing, spread,
                          refPeriodStart, refPeriodEnd,
                          dayCounter, isInArrears, exCouponDate),
       bondIndex_(bondIndex) {
         this->fixingDate_ = this->fixingDate();
-
-        auto iborIndex = ext::make_shared<IborIndex>(
-            "dummyIborIndex",
-            bondIndex->fixedLegTenor(),
-            bondIndex->fixingDays(),
-            bondIndex->currency(),
-            bondIndex->fixingCalendar(),
-            bondIndex->fixedLegConvention(),
-            false,
-            bondIndex->fixedLegDayCounter(),
-            bondIndex->discountingTermStructure());
-                  
-
-        this->swapIndex_ = ext::make_shared<SwapIndex>(
-            "dummySwapIndex",
-            bondIndex->tenor(),
-            bondIndex->fixingDays(),
-            bondIndex->currency(),
-            bondIndex->fixingCalendar(),
-            bondIndex->fixedLegTenor(),
-            bondIndex->fixedLegConvention(),
-            bondIndex->fixedLegDayCounter(),
-            iborIndex,
-            bondIndex->discountingTermStructure());
     }
 
     CmtCoupon::CmtCoupon(const Date& paymentDate,
@@ -84,37 +60,13 @@ namespace QuantLib {
                          const DayCounter& dayCounter,
                          bool isInArrears,
                          const Date& exCouponDate)
-    : FloatingRateCoupon(paymentDate, nominal, startDate, endDate,
+    : CmsCoupon(paymentDate, nominal, startDate, endDate,
                          Null<Natural>(),
-                         bondIndex, gearing, spread,
+                         bondIndex->dummySwapIndex(), gearing, spread,
                          refPeriodStart, refPeriodEnd,
                          dayCounter, isInArrears, exCouponDate),
       bondIndex_(bondIndex) {
         this->fixingDate_ = fixingDate;
-
-        auto iborIndex = ext::make_shared<IborIndex>(
-            "dummyIborIndex",
-            bondIndex->fixedLegTenor(),
-            bondIndex->fixingDays(),
-            bondIndex->currency(),
-            bondIndex->fixingCalendar(),
-            bondIndex->fixedLegConvention(),
-            false,
-            bondIndex->fixedLegDayCounter(),
-            bondIndex->discountingTermStructure());
-                  
-
-        this->swapIndex_ = ext::make_shared<SwapIndex>(
-            "dummySwapIndex",
-            bondIndex->tenor(),
-            bondIndex->fixingDays(),
-            bondIndex->currency(),
-            bondIndex->fixingCalendar(),
-            bondIndex->fixedLegTenor(),
-            bondIndex->fixedLegConvention(),
-            bondIndex->fixedLegDayCounter(),
-            iborIndex,
-            bondIndex->discountingTermStructure());
     }
 
     void CmtCoupon::accept(AcyclicVisitor& v) {

@@ -44,11 +44,116 @@
 #include <iostream>
 #include <iomanip>
 
+#include <ql/indexes/bondindex.hpp>
+#include <ql/cashflows/cmtcoupon.hpp>
+#include <ql/pricingengines/bond/discountingbondengine.hpp>
+#include <ql/pricingengines/swap/discountingswapengine.hpp>
+#include <ql/termstructures/yield/piecewiseyieldcurve.hpp>
+#include <ql/termstructures/yield/ratehelpers.hpp>
+#include <ql/termstructures/yield/flatforward.hpp>
+#include <ql/termstructures/volatility/swaption/swaptionvolstructure.hpp>
+#include <ql/currencies/all.hpp>
+#include <ql/time/calendars/all.hpp>
+#include <ql/cashflows/fixedratecoupon.hpp>
+#include <ql/termstructures/volatility/swaption/all.hpp>
+
 using namespace QuantLib;
+
+int test_cmt_swap() {
+
+    // 오늘 날짜 설정
+    Date today(31, October, 2024);
+    Settings::instance().evaluationDate() = today;
+
+    // 금리 데이터 (3개월 ~ 50년)
+    std::vector<Period> tenors = {3*Months, 6*Months, 9*Months, 12*Months, 18*Months, 24*Months, 30*Months, 36*Months, 48*Months, 60*Months,
+									7*Years, 10*Years, 15*Years, 20*Years, 30*Years, 50*Years};
+    std::vector<Rate> rates = {0.0307, 0.02963, 0.02977, 0.02881, 0.0293, 0.0298, 0.02985, 0.02942, 0.03014, 0.02985, 0.03102, 0.03062, 0.02984, 0.02986, 0.029, 0.02817};
+
+    // 금리 헬퍼 설정
+    std::vector<ext::shared_ptr<RateHelper>> helpers;
+    for (Size i = 0; i < tenors.size(); i++) {
+		ext::shared_ptr<Quote> quote(new SimpleQuote(rates[i]));
+		ext::shared_ptr<RateHelper> helper(new DepositRateHelper(Handle<Quote>(quote), tenors[i], 2, NullCalendar(), ModifiedFollowing, false, Actual365Fixed()));
+		helpers.push_back(helper);
+	}
+
+    // 금리 곡선 생성
+	ext::shared_ptr<YieldTermStructure> yieldCurve = 
+        ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear>>(today, helpers, Actual365Fixed());
+
+	Handle<YieldTermStructure> curveHandle(yieldCurve);
+
+	// 변동 금리 인덱스 (KTB 3Y)
+	ext::shared_ptr<BondIndex> ktb_3y_index(new BondIndex(
+		"KTB 3Y Index",
+		3*Years, 2, KRWCurrency(), SouthKorea(), 6*Months, ModifiedFollowing, Actual365Fixed(), curveHandle
+	));
+
+	ktb_3y_index->addFixing(Date(30, October, 2024), 0.029);
+
+	Calendar calendar = SouthKorea();
+
+	// 스왑 스케줄 생성
+	Schedule fixedSchedule(today, today + Period(20, Years), Period(1, Months), calendar, ModifiedFollowing, ModifiedFollowing, DateGeneration::Forward, false);
+	Schedule floatingSchedule(today, today + Period(20, Years), Period(1, Months), calendar, ModifiedFollowing, ModifiedFollowing, DateGeneration::Forward, false);
+
+	// 고정 금리 레그 설정
+	Real fixedRate = 0.03;  // 고정 금리 3%
+	Real notional = 10000;  // 명목 금액
+	// Leg fixedLeg = FixedRateLeg(fixedSchedule).withNotionals(notional).withCouponRates(fixedRate, Actual365Fixed());
+        Leg fixedLeg = Leg();
+
+	// 변동 금리 레그 설정
+	Leg cmtLeg;
+	Volatility vol = 0.004;
+	ext::shared_ptr<SwaptionVolatilityStructure> swaptionVol(
+        new ConstantSwaptionVolatility(0, calendar, ModifiedFollowing, vol, Actual365Fixed(), Normal));
+    Handle<SwaptionVolatilityStructure> volHandle(swaptionVol);
+
+	auto pricer = ext::make_shared<AnalyticHaganPricer>(
+        volHandle, GFunctionFactory::Standard, 
+        Handle<Quote>(ext::shared_ptr<Quote>(new SimpleQuote(0.0))));
+
+	std::vector<Date> dates = floatingSchedule.dates();
+
+	for (Size i=0; i<dates.size()-1; i++) {
+		Date d = dates[i+1];
+        Date startDate = dates[i];
+        Date endDate = dates[i+1];
+
+        auto cpn = ext::make_shared<CmtCoupon>(
+            d, notional, startDate, endDate, startDate, ktb_3y_index);
+
+        cpn->setPricer(pricer);
+
+        cmtLeg.push_back(cpn);
+
+        }
+
+    // 스왑 생성
+    Swap swap(fixedLeg, cmtLeg);
+
+    // 할인 엔진 설정
+    auto engine = ext::make_shared<DiscountingSwapEngine>(curveHandle);
+    swap.setPricingEngine(engine);
+
+    // NPV 계산
+    Real npv = swap.NPV();
+
+    std::cout << "Swap NPV: " << npv << std::endl;
+
+    return 1;
+}
 
 int main(int, char* []) {
 
+
     try {
+
+        test_cmt_swap();
+
+        return 0;
 
         std::cout << std::endl;
 
@@ -431,6 +536,7 @@ int main(int, char* []) {
          return 0;
 
     } catch (std::exception& e) {
+
         std::cerr << e.what() << std::endl;
         return 1;
     } catch (...) {
